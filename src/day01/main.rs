@@ -2,7 +2,7 @@ use std::fs;
 
 fn main() {
     let mut int_lines: Vec<i32> = Vec::new();
-    for line in lines("day01/in.txt") {
+    for line in lines("inputs/01.txt") {
         int_lines.push(line.parse().unwrap());
     }
 
