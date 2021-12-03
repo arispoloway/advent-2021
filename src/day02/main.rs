@@ -1,9 +1,19 @@
 use std::fs;
 
 type Input = Vec<Action>;
+type Input1 = Input;
+type Input2 = Input;
 const INPUT_FILE: &str = "inputs/02.txt";
 
-fn parse_lines(lines: Vec<String>) -> Input {
+fn parse_input_1(lines: &Vec<String>) -> Input1 {
+    parse_input(lines)
+}
+
+fn parse_input_2(lines: &Vec<String>) -> Input2 {
+    parse_input(lines)
+}
+
+fn parse_input(lines: &Vec<String>) -> Input {
     let mut actions: Vec<Action> = Vec::new();
 
     for line in lines {
@@ -16,16 +26,16 @@ fn parse_lines(lines: Vec<String>) -> Input {
 
 #[derive(Debug, Copy, Clone)]
 enum Action {
-    Forward(i32),
-    Down(i32),
-    Up(i32)
+    Forward(i64),
+    Down(i64),
+    Up(i64),
 }
 
 impl Action {
     fn parse(line: &String) -> Action {
         let mut split = line.split(" ");
         let dir = split.next().unwrap();
-        let amount = split.next().unwrap().parse::<i32>().unwrap();
+        let amount = split.next().unwrap().parse::<i64>().unwrap();
         if dir == "forward" {
             Action::Forward(amount)
         } else if dir == "down" {
@@ -38,7 +48,7 @@ impl Action {
     }
 }
 
-fn part1(input: &Input) -> String {
+fn part1(input: &Input1) -> String {
     let mut distance: i64 = 0;
     let mut depth: i64 = 0;
 
@@ -53,7 +63,7 @@ fn part1(input: &Input) -> String {
     format!("{}", distance * depth)
 }
 
-fn part2(input: &Input) -> String {
+fn part2(input: &Input2) -> String {
     let mut aim: i64 = 0;
     let mut distance: i64 = 0;
     let mut depth: i64 = 0;
@@ -65,20 +75,15 @@ fn part2(input: &Input) -> String {
             Action::Forward(amount) => {
                 distance = distance + (*amount as i64);
                 depth = depth + (aim * (*amount as i64));
-            },
+            }
         }
     }
 
     format!("{}", distance * depth)
 }
 
-fn parse_input() -> Input {
-    parse_lines(lines(INPUT_FILE))
-}
-
 fn lines(filename: &str) -> Vec<String> {
-    let file_string = fs::read_to_string(filename)
-        .expect("Something went wrong reading the file");
+    let file_string = fs::read_to_string(filename).expect("Something went wrong reading the file");
     file_string
         .split("\n")
         .map(|x| x.trim_end().to_string())
@@ -86,8 +91,8 @@ fn lines(filename: &str) -> Vec<String> {
 }
 
 fn main() {
-    let actions = parse_input();
+    let lines = lines(INPUT_FILE);
 
-    println!("{}", part1(&actions));
-    println!("{}", part2(&actions));
+    println!("{}", part1(&parse_input_1(&lines)));
+    println!("{}", part2(&parse_input_2(&lines)));
 }
