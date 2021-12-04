@@ -30,8 +30,8 @@ struct MarkableInput<'a> {
     finished: Vec<bool>,
 }
 
-impl<'b> MarkableInput<'b> {
-    fn new<'a>(input: &'a Input1) -> MarkableInput<'a> {
+impl<'a> MarkableInput<'a> {
+    fn new(input: &Input1) -> MarkableInput {
         MarkableInput {
             input,
             next_selection: 0,
