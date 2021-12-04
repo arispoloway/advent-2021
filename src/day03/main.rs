@@ -69,18 +69,14 @@ fn part1(input: &Input1) -> String {
     format!("{:?}", word_to_int(&gamma) * word_to_int(&epsilon))
 }
 
-fn keep_bit(input: &mut Input, bit: usize, value: bool) {
-    input.retain(|row| row[bit] == value);
-}
-
 fn rating(input: &Input, max: bool) -> u32 {
     let mut input = input.clone();
     let mut bit: usize = 0;
 
     while input.len() > 1 {
         match max_in_position(&input, bit) {
-            Some(false) => keep_bit(&mut input, bit, !max),
-            None | Some(true) => keep_bit(&mut input, bit, max),
+            Some(false) => input.retain(|row| row[bit] == !max),
+            None | Some(true) => input.retain(|row| row[bit] == max),
         }
         bit += 1;
     }
