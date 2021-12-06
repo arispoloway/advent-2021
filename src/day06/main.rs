@@ -14,20 +14,12 @@ fn step(input: &mut Input) {
     input[8] = next;
 }
 
-fn count(input: &Input) -> u128 {
-    let mut count = 0;
-    for i in input {
-        count += i;
-    }
-    count
-}
-
 fn step_n_count(input: &Input, n: usize) -> u128 {
     let mut input = input.clone();
     for _ in 0..n {
         step(&mut input);
     }
-    count(&input)
+    input.into_iter().sum()
 }
 
 fn part1(input: &Input1) -> String {
