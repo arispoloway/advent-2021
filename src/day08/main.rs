@@ -32,11 +32,11 @@ fn find<'a>(digits: &'a Vec<String>, predicate: &dyn Fn(&String) -> bool) -> &'a
     panic!()
 }
 
-// small enough that linear doesn't matter
 fn diff(a: &String, b: &String) -> Vec<char> {
     let mut diff = Vec::new();
     let b_chars = b.chars().collect::<Vec<char>>();
     for char in a.chars() {
+        // small enough that this being linear doesn't matter
         if !b_chars.contains(&char) {
             diff.push(char);
         }
@@ -48,6 +48,7 @@ fn intersect(a: &String, b: &String) -> Vec<char> {
     let mut intersection = Vec::new();
     let b_chars = b.chars().collect::<Vec<char>>();
     for char in a.chars() {
+        // small enough that this being linear doesn't matter
         if b_chars.contains(&char) {
             intersection.push(char);
         }
@@ -156,23 +157,22 @@ fn sort_digit(digit: String) -> String {
     chars.iter().collect::<String>()
 }
 
+fn next_split<'a>(split: &mut impl Iterator<Item = &'a str>) -> Vec<String> {
+    split
+        .next()
+        .unwrap()
+        .split(" ")
+        .map(|x| sort_digit(x.to_string()))
+        .collect()
+}
+
 fn parse_input(lines: &Vec<String>) -> Input {
     let mut input = Vec::new();
     for line in lines.iter() {
         let mut split = line.split(" | ");
         input.push(Line {
-            digits: split
-                .next()
-                .unwrap()
-                .split(" ")
-                .map(|x| sort_digit(x.to_string()))
-                .collect(),
-            code: split
-                .next()
-                .unwrap()
-                .split(" ")
-                .map(|x| sort_digit(x.to_string()))
-                .collect(),
+            digits: next_split(&mut split),
+            code: next_split(&mut split),
         });
     }
     input
