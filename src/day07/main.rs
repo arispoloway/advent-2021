@@ -21,11 +21,19 @@ fn part1(input: &Input1) -> String {
     format!("{:?}", diff)
 }
 
+fn mean(input: &Input) -> i64 {
+    ((input.iter().sum::<i64>() as f64) / (input.len() as f64)).round() as i64
+}
+
+fn fuel(input: &Input2, loc: i64) -> i64 {
+    input.iter().map(|x| val((x - loc).abs())).sum::<i64>()
+}
+
 fn part2(input: &Input2) -> String {
-    // I'm sure there's a smart way to do this
-    // It's very close to the part1 approach but with the mean, so I'm probably just messing something up there
-    let min = (0..input.len())
-        .map(|x| input.iter().map(|y| val((x as i64 - y).abs())).sum::<i64>())
+    let med = mean(input);
+    let min = vec![med, med - 1, med + 1]
+        .iter()
+        .map(|x| fuel(input, *x))
         .min()
         .unwrap();
     format!("{:?}", min)
