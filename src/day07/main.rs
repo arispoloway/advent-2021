@@ -31,6 +31,7 @@ fn fuel(input: &Input2, loc: i64) -> i64 {
 
 fn part2(input: &Input2) -> String {
     let med = mean(input);
+    // local min is probably good enough, right???
     let min = vec![med, med - 1, med + 1]
         .iter()
         .map(|x| fuel(input, *x))
