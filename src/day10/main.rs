@@ -84,10 +84,9 @@ fn part2(input: &Input2) -> String {
     for line in input.iter() {
         if let (mut stack, None) = process_line(line) {
             let mut score: i128 = 0;
-            stack.reverse();
-            for c in stack.iter() {
+            while let Some(c) = stack.pop() {
                 score *= 5;
-                score += open_score(*c);
+                score += open_score(c);
             }
             scores.push(score);
         }
