@@ -6,11 +6,13 @@ struct Input(Vec<Vec<u8>>);
 
 type Input1 = Input;
 type Input2 = Input;
+
 const INPUT_FILE: &str = "inputs/09.txt";
+
 type Coord = (usize, usize);
 
 impl<'a> Input {
-    fn iter(&'a self) -> impl Iterator<Item = (Coord, u8)> + 'a {
+    fn iter(&'a self) -> impl Iterator<Item=(Coord, u8)> + 'a {
         let rows = self.0.len();
         let cols = self.0[0].len();
         let mut x = 0;
@@ -113,6 +115,7 @@ fn parse_input_1(lines: &Vec<String>) -> Input1 {
 fn parse_input_2(lines: &Vec<String>) -> Input2 {
     parse_input(lines)
 }
+
 fn lines(filename: &str) -> Vec<String> {
     let file_string = fs::read_to_string(filename).expect("Something went wrong reading the file");
     file_string
