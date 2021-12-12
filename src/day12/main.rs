@@ -1,98 +1,118 @@
-#![feature(map_first_last)]
+#![feature(hash_set_entry)]
 
 use std::collections::{HashMap, HashSet};
 use std::fs;
 
 #[derive(Debug, Clone)]
-struct Input {
-    edges: HashMap<String, HashSet<String>>,
+struct Input<'a> {
+    edges: HashMap<&'a Cave, HashSet<&'a Cave>>,
+    nodes: HashSet<Cave>,
 }
 
-type Input1 = Input;
-type Input2 = Input;
+type Input1<'a> = Input<'a>;
+type Input2<'a> = Input<'a>;
 
 const INPUT_FILE: &str = "inputs/12.txt";
 
-impl Input {
-    fn new() -> Self {
-        Input {
+impl<'a> Input<'a> {
+    fn new(lines: &Vec<String>) -> Self {
+        let mut input = Input {
             edges: HashMap::new(),
+            nodes: HashSet::new(),
+        };
+
+        for line in lines.iter() {
+            let mut parts = line.split("-");
+            let from = parts.next().unwrap().to_string();
+            let to = parts.next().unwrap().to_string();
+
+            // This needs to be done in two steps, because the compiler yells at me for borring
+            // mutably twice.
+            input.add_cave(from.clone());
+            input.add_cave(to.clone());
+            let cave_from = input.get_cave(from.clone());
+            let cave_to = input.get_cave(to.clone());
+            match cave_from {
+                Cave::Start => {
+                    input.add_edge(cave_from, cave_to);
+                }
+                Cave::End => {
+                    input.add_edge(cave_to, cave_from);
+                }
+                _ => {
+                    match cave_to {
+                        Cave::Start => {
+                            input.add_edge(cave_to, cave_from);
+                        }
+                        Cave::End => {
+                            input.add_edge(cave_from, cave_to);
+                        }
+                        _ => {
+                            input.add_edge(cave_from, cave_to);
+                            input.add_edge(cave_to, cave_from);
+                        }
+                    }
+                }
+            }
         }
+        input
     }
 
-    fn add_edge(&mut self, from: &str, to: &str) {
-        let from = from.to_string();
-        let to = to.to_string();
+    fn add_cave(&mut self, cave_name: String) {
+        self.nodes.get_or_insert(Cave::new(cave_name));
+    }
+
+    fn get_cave(&self, cave_name: String) -> &Cave {
+        // a little annoying that this is how I need to look it up, but whatever
+        self.nodes.get(&Cave::new(cave_name)).unwrap()
+    }
+
+    fn add_edge(&'a mut self, from: &'a Cave, to: &'a Cave) {
         self.edges.entry(from).or_insert(HashSet::new()).insert(to);
     }
 
-    fn get_edges(&self, from: &String) -> &HashSet<String> {
+    fn get_edges(&'a self, from: &Cave) -> &'a HashSet<&Cave> {
         &self.edges[from]
     }
 }
 
-enum CaveType {
-    Small,
-    Big,
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+enum Cave {
+    Small(String),
+    Big(String),
     Start,
     End,
 }
 
-fn cave_type(str: &str) -> CaveType {
-    match str {
-        "start" => CaveType::Start,
-        "end" => CaveType::End,
-        x if x.to_uppercase() == x => CaveType::Big,
-        _ => CaveType::Small,
-    }
-}
-
-// TODO: Fix up all of my .to_string() calls, as well as my probably bad representation
-// of the graph which makes me need to call cave_type everywhere
-
-fn count_to_end_1(input: &Input, from: String, visited_small_caves: &mut HashSet<String>) -> usize {
-    let mut sum = 0;
-    for next in input.get_edges(&from).iter() {
-        let next_type = cave_type(&next);
-        match next_type {
-            CaveType::End => {
-                sum += 1;
-            }
-            CaveType::Small => {
-                if !visited_small_caves.contains(next) {
-                    visited_small_caves.insert(next.to_string());
-                    sum += count_to_end_1(input, next.to_string(), visited_small_caves);
-                    visited_small_caves.remove(next);
-                }
-            }
-            CaveType::Big => {
-                sum += count_to_end_1(input, next.to_string(), visited_small_caves);
-            }
-            _ => { panic!("Should never go back to start"); }
+impl Cave {
+    fn new(name: String) -> Self {
+        match name.as_str() {
+            "start" => Cave::Start,
+            "end" => Cave::End,
+            x if x.to_uppercase() == x => Cave::Big(x.to_string()),
+            x => Cave::Small(x.to_string()),
         }
     }
-    sum
 }
 
-fn count_to_end_2(input: &Input, from: String, visited_small_caves: &mut HashSet<String>, visited_twice: &Option<String>) -> usize {
+fn count_to_end<'a>(input: &'a Input, from: &'a Cave, visited_small_caves: &mut HashSet<&'a Cave>, visited_twice: &Option<&'a Cave>) -> usize {
     let mut sum = 0;
-    for next in input.get_edges(&from).iter() {
-        let next_type = cave_type(&next);
-        match next_type {
-            CaveType::End => {
+    for next in input.get_edges(from).iter() {
+        match next {
+            Cave::End => {
                 sum += 1;
             }
-            CaveType::Small => {
+            Cave::Small(_) => {
                 if !visited_small_caves.contains(next) {
-                    visited_small_caves.insert(next.to_string());
-                    sum += count_to_end_2(input, next.to_string(), visited_small_caves, visited_twice);
+                    visited_small_caves.insert(next);
+                    sum += count_to_end(input, next, visited_small_caves, visited_twice);
                     visited_small_caves.remove(next);
                 } else if visited_twice.is_none() {
-                    sum += count_to_end_2(input, next.to_string(), visited_small_caves, &Some(next.to_string()));
+                    sum += count_to_end(input, next, visited_small_caves, &Some(next));
                 }
             }
-            CaveType::Big => {
-                sum += count_to_end_2(input, next.to_string(), visited_small_caves, visited_twice);
+            Cave::Big(_) => {
+                sum += count_to_end(input, next, visited_small_caves, visited_twice);
             }
             _ => { panic!("Should never go back to start"); }
         }
@@ -101,44 +121,15 @@ fn count_to_end_2(input: &Input, from: String, visited_small_caves: &mut HashSet
 }
 
 fn part1(input: &Input1) -> String {
-    count_to_end_1(input, "start".to_string(), &mut HashSet::new()).to_string()
+    count_to_end(input, &Cave::Start, &mut HashSet::new(), &Some(&Cave::Start)).to_string()
 }
 
 fn part2(input: &Input2) -> String {
-    count_to_end_2(input, "start".to_string(), &mut HashSet::new(), &None).to_string()
+    count_to_end(input, &Cave::End, &mut HashSet::new(), &None).to_string()
 }
 
 fn parse_input(lines: &Vec<String>) -> Input {
-    let mut input = Input::new();
-
-    for line in lines.iter() {
-        let mut parts = line.split("-");
-        let from = parts.next().unwrap();
-        let to = parts.next().unwrap();
-        match cave_type(from) {
-            CaveType::Start => {
-                input.add_edge(from, to);
-            }
-            CaveType::End => {
-                input.add_edge(to, from);
-            }
-            _ => {
-                match cave_type(to) {
-                    CaveType::Start => {
-                        input.add_edge(to, from);
-                    }
-                    CaveType::End => {
-                        input.add_edge(from, to);
-                    }
-                    _ => {
-                        input.add_edge(from, to);
-                        input.add_edge(to, from);
-                    }
-                }
-            }
-        }
-    }
-    input
+    Input::new(lines)
 }
 
 fn parse_input_1(lines: &Vec<String>) -> Input1 {
