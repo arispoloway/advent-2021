@@ -16,59 +16,40 @@ const INPUT_FILE: &str = "inputs/12.txt";
 
 impl<'a> Input<'a> {
     fn new(lines: &Vec<String>) -> Self {
-        let mut input = Input {
-            edges: HashMap::new(),
-            nodes: HashSet::new(),
-        };
+        let mut nodes = HashSet::new();
+        let mut edges: HashMap<&Cave, HashSet<&Cave>> = HashMap::new();
 
         for line in lines.iter() {
             let mut parts = line.split("-");
             let from = parts.next().unwrap().to_string();
             let to = parts.next().unwrap().to_string();
 
-            // This needs to be done in two steps, because the compiler yells at me for borring
-            // mutably twice.
-            input.add_cave(from.clone());
-            input.add_cave(to.clone());
-            let cave_from = input.get_cave(from.clone());
-            let cave_to = input.get_cave(to.clone());
+            let cave_from = nodes.get_or_insert(Cave::new(from.clone()));
+            let cave_to = nodes.get_or_insert(Cave::new(to.clone()));
             match cave_from {
                 Cave::Start => {
-                    input.add_edge(cave_from, cave_to);
+                    edges.entry(cave_from).or_insert(HashSet::new()).insert(cave_to);
                 }
                 Cave::End => {
-                    input.add_edge(cave_to, cave_from);
+                    edges.entry(cave_to).or_insert(HashSet::new()).insert(cave_from);
                 }
                 _ => {
                     match cave_to {
                         Cave::Start => {
-                            input.add_edge(cave_to, cave_from);
+                            edges.entry(cave_to).or_insert(HashSet::new()).insert(cave_from);
                         }
                         Cave::End => {
-                            input.add_edge(cave_from, cave_to);
+                            edges.entry(cave_from).or_insert(HashSet::new()).insert(cave_to);
                         }
                         _ => {
-                            input.add_edge(cave_from, cave_to);
-                            input.add_edge(cave_to, cave_from);
+                            edges.entry(cave_from).or_insert(HashSet::new()).insert(cave_to);
+                            edges.entry(cave_to).or_insert(HashSet::new()).insert(cave_from);
                         }
                     }
                 }
             }
         }
-        input
-    }
-
-    fn add_cave(&mut self, cave_name: String) {
-        self.nodes.get_or_insert(Cave::new(cave_name));
-    }
-
-    fn get_cave(&self, cave_name: String) -> &Cave {
-        // a little annoying that this is how I need to look it up, but whatever
-        self.nodes.get(&Cave::new(cave_name)).unwrap()
-    }
-
-    fn add_edge(&'a mut self, from: &'a Cave, to: &'a Cave) {
-        self.edges.entry(from).or_insert(HashSet::new()).insert(to);
+        Input { edges, nodes }
     }
 
     fn get_edges(&'a self, from: &Cave) -> &'a HashSet<&Cave> {
